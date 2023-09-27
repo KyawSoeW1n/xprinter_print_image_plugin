@@ -10,14 +10,15 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
-//import net.posprinter.POSConnect
-//import net.posprinter.POSPrinter
+import net.posprinter.IDeviceConnection
+import net.posprinter.POSConnect
+import net.posprinter.POSPrinter
+import net.posprinter.POSConst
 
 /** XprinterPrintImagePlugin */
 class XprinterPrintImagePlugin : FlutterPlugin, MethodCallHandler {
-//    private val curConnect = POSConnect.createDevice(POSConnect.DEVICE_TYPE_BLUETOOTH)
-
-//    private lateinit var printer: POSPrinter
+    private lateinit var printer: POSPrinter
+    private var curConnect: IDeviceConnection? = null
     private var context: Context? = null
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         onAttachedToEngine(
@@ -31,33 +32,54 @@ class XprinterPrintImagePlugin : FlutterPlugin, MethodCallHandler {
         when (call.method) {
             "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
             "connectDevice" -> {
-                Log.e("MAC ADDRESS", "---- \t" + call.argument("macAddress"))
 
-//                val macAddress = call.argument<String>("macAddress")
-//                curConnect.connect(macAddress) { code, message ->
-//                    when (code) {
-//                        POSConnect.CONNECT_SUCCESS -> Log.e(
-//                            "PRINTER STATUS",
-//                            "CONNECT SUCCESS$code $message"
-//                        )
-//
-//                        POSConnect.CONNECT_FAIL -> Log.e(
-//                            "PRINTER STATUS",
-//                            "CONNECT FAILED $code $message"
-//                        )
-//
-//                        POSConnect.SEND_FAIL -> Log.e(
-//                            "PRINTER STATUS",
-//                            "SEND FAILED $code $message"
-//                        )
-//                    }
-//                }
-//                printer = POSPrinter(curConnect)
+                Log.e("MAC ADDRESS", "---- \t" + call.argument("macAddress"))
+                POSConnect.init(context)
+                curConnect = POSConnect.createDevice(POSConnect.DEVICE_TYPE_BLUETOOTH)
+
+                val macAddress = call.argument<String>("macAddress")
+                curConnect?.connect(macAddress) { code, message ->
+                    when (code) {
+                        POSConnect.CONNECT_SUCCESS -> {
+                            Log.e(
+                                "PRINTER STATUS",
+                                "CONNECT SUCCESS$code $message"
+                            )
+                            result.success(code)
+
+                        }
+
+                        POSConnect.CONNECT_FAIL -> {
+                            Log.e(
+                                "PRINTER STATUS",
+                                "CONNECT FAILED $code $message"
+                            )
+
+                        }
+
+                        POSConnect.SEND_FAIL -> {
+                            Log.e(
+                                "PRINTER STATUS",
+                                "SEND FAILED $code $message"
+                            )
+                        }
+                    }
+                }
+                printer = POSPrinter(curConnect)
             }
 
             "disconnectDevice" -> {
-//                if (curConnect.isConnect)
-//                    curConnect.close()
+                curConnect?.let {
+                    if (it.isConnect)
+                        it.close()
+                }
+            }
+
+            "printImage" -> {
+                val printBmp = call.argument<String>("bitmap")
+                printer!!.printBitmap(printBmp, POSConst.ALIGNMENT_CENTER, 384)
+                    .feedLine()
+                    .cutHalfAndFeed(1)
             }
 
             else -> result.notImplemented()
@@ -84,15 +106,6 @@ class XprinterPrintImagePlugin : FlutterPlugin, MethodCallHandler {
             }
         })
     }
-
-//    override fun onStatus(code: Int, message: String?) {
-//
-//        when (code) {
-//            POSConnect.CONNECT_SUCCESS -> Log.e("PRINTER STATUS", "CONNECT SUCCESS$code")
-//            POSConnect.CONNECT_FAIL -> Log.e("PRINTER STATUS", "CONNECT FAILED $code")
-//            POSConnect.SEND_FAIL -> Log.e("PRINTER STATUS", "SEND FAILED $code")
-//        }
-//    }
 
     companion object {
         private var sink: EventChannel.EventSink? = null

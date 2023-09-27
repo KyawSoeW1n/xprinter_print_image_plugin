@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:xprinter_print_image_plugin/connect_status.dart';
 import 'package:xprinter_print_image_plugin/xprinter_print_image_plugin.dart';
 
 void main() {
@@ -21,12 +23,17 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   String bluetoothMacAddress = 'Unknown MAC';
+  String connectStatus = "Disconnect";
+
   final _xprinterPrintImagePlugin = XprinterPrintImagePlugin();
 
   @override
   void initState() {
     super.initState();
     initPlatformState();
+    XprinterPrintImagePlugin.onPrintStatus().listen((event) {
+      log('onPrint Status $event');
+    });
     _getBluetoothMacAddress();
   }
 
@@ -103,10 +110,19 @@ class _MyAppState extends State<MyApp> {
           child: Column(
             children: [
               Text('Running on: $_platformVersion\n'),
-              Text('Running on: MAC $bluetoothMacAddress'),
+              Text('MAC ADDRESS $bluetoothMacAddress'),
+              Text('CONNECT STATUS $connectStatus'),
               ElevatedButton(
                 onPressed: connectDevice,
                 child: const Text("Connect Device"),
+              ),
+              ElevatedButton(
+                onPressed: disconnectDevice,
+                child: const Text("Disconnect Device"),
+              ),
+              ElevatedButton(
+                onPressed: pickImage,
+                child: const Text("Select Image"),
               ),
               ElevatedButton(
                 onPressed: selectImage,
@@ -120,6 +136,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void selectImage() {
+    XprinterPrintImagePlugin.platformVersion;
     log("Select Image");
   }
 
@@ -127,7 +144,26 @@ class _MyAppState extends State<MyApp> {
     XprinterPrintImagePlugin.connectDevice(
       macAddress: bluetoothMacAddress,
     ).then((res) {
-      log('Connected Status \t $res');
+      if (res == ConnectStatus.connectSuccess.code) {
+        connectStatus = "Connected";
+      } else {
+        connectStatus = "Disconnect";
+      }
+      setState(() {});
     });
+  }
+
+  pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final result = await picker.pickImage(source: ImageSource.gallery);
+    if (result != null) printImage(result.path);
+  }
+
+  printImage(String filePath) {
+    XprinterPrintImagePlugin.printImage(filePath: filePath);
+  }
+
+  void disconnectDevice() {
+    XprinterPrintImagePlugin.disconnectDevice();
   }
 }

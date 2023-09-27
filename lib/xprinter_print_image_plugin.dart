@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/services.dart';
 
 import 'xprinter_print_image_plugin_platform_interface.dart';
@@ -7,7 +9,7 @@ class XprinterPrintImagePlugin {
       MethodChannel('xprinter_print_image_plugin');
   static const EventChannel _eventChannel =
       EventChannel('xprinter_print_image_plugin/print_image');
-  static Stream<dynamic>? _streamPayStatus;
+  static Stream<dynamic>? _streamPrintStatus;
 
   Future<String?> getPlatformVersion() {
     return XprinterPrintImagePluginPlatform.instance.getPlatformVersion();
@@ -15,18 +17,30 @@ class XprinterPrintImagePlugin {
 
   static Future<String> get platformVersion async {
     final String version = await _channel.invokeMethod('getPlatformVersion');
+    log("VERSION $version");
     return version;
   }
 
   static Stream<dynamic> onPrintStatus() {
-    _streamPayStatus = _eventChannel.receiveBroadcastStream();
-    return _streamPayStatus!;
+    _streamPrintStatus = _eventChannel.receiveBroadcastStream();
+    return _streamPrintStatus!;
   }
 
-  static Future<String> connectDevice({required String macAddress}) async {
-    final String data = await _channel.invokeMethod('connectDevice', {
+  static Future<int> connectDevice({required String macAddress}) async {
+    final data = await _channel.invokeMethod('connectDevice', {
       'macAddress': macAddress,
     });
     return data;
+  }
+
+  static Future<int> printImage({required String filePath}) async {
+    final data = await _channel.invokeMethod('printImage', {
+      'bitmap': filePath,
+    });
+    return data;
+  }
+
+  static Future<void> disconnectDevice() async {
+    await _channel.invokeMethod('disconnectDevice');
   }
 }
