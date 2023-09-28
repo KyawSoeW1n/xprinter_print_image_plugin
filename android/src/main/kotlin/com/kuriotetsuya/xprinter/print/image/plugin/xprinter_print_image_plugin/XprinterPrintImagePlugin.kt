@@ -12,14 +12,16 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
 import net.posprinter.IDeviceConnection
 import net.posprinter.POSConnect
-import net.posprinter.POSPrinter
 import net.posprinter.POSConst
+import net.posprinter.POSPrinter
 
 /** XprinterPrintImagePlugin */
 class XprinterPrintImagePlugin : FlutterPlugin, MethodCallHandler {
     private lateinit var printer: POSPrinter
     private var curConnect: IDeviceConnection? = null
     private var context: Context? = null
+    private var distance = 1
+    private var feedLine = 3
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         onAttachedToEngine(
             flutterPluginBinding.applicationContext,
@@ -28,12 +30,16 @@ class XprinterPrintImagePlugin : FlutterPlugin, MethodCallHandler {
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
-        Log.e("CALL METHOD", "---- \t" + call.method)
+        call.argument<Int>("distance")?.let {
+            distance = it
+        }
+        call.argument<Int>("feedLine")?.let {
+            feedLine = it
+        }
         when (call.method) {
             "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
             "connectDevice" -> {
-
-                Log.e("MAC ADDRESS", "---- \t" + call.argument("macAddress"))
+                Log.i("MAC ADDRESS", "---- \t" + call.argument("macAddress"))
                 POSConnect.init(context)
                 curConnect = POSConnect.createDevice(POSConnect.DEVICE_TYPE_BLUETOOTH)
 
@@ -43,10 +49,9 @@ class XprinterPrintImagePlugin : FlutterPlugin, MethodCallHandler {
                         POSConnect.CONNECT_SUCCESS -> {
                             Log.e(
                                 "PRINTER STATUS",
-                                "CONNECT SUCCESS$code $message"
+                                "CONNECT SUCCESS $code $message"
                             )
                             result.success(code)
-
                         }
 
                         POSConnect.CONNECT_FAIL -> {
@@ -55,6 +60,13 @@ class XprinterPrintImagePlugin : FlutterPlugin, MethodCallHandler {
                                 "CONNECT FAILED $code $message"
                             )
 
+                        }
+
+                        POSConnect.CONNECT_INTERRUPT -> {
+                            Log.e(
+                                "PRINTER STATUS",
+                                "CONNECT FAILED $code $message"
+                            )
                         }
 
                         POSConnect.SEND_FAIL -> {
@@ -70,16 +82,28 @@ class XprinterPrintImagePlugin : FlutterPlugin, MethodCallHandler {
 
             "disconnectDevice" -> {
                 curConnect?.let {
-                    if (it.isConnect)
+                    if (it.isConnect) {
                         it.close()
+                    }
                 }
             }
 
+            "printText" -> {
+                val printText = call.argument<String>("text")
+                printer.printString(printText)
+                    .feedLine(feedLine)
+                    .cutHalfAndFeed(distance)
+                result.success(PrintStatus.PrintTextSuccess.code)
+            }
+
             "printImage" -> {
-                val printBmp = call.argument<String>("bitmap")
-                printer!!.printBitmap(printBmp, POSConst.ALIGNMENT_CENTER, 384)
-                    .feedLine()
-                    .cutHalfAndFeed(1)
+                val imageWidth = call.argument<Int>("imageWidth") ?: 384
+
+                val filePath = call.argument<String>("filePath")
+                printer!!.printBitmap(filePath, POSConst.ALIGNMENT_CENTER, imageWidth)
+                    .feedLine(feedLine)
+                    .cutHalfAndFeed(distance)
+                result.success(PrintStatus.PrintImageSuccess.code)
             }
 
             else -> result.notImplemented()

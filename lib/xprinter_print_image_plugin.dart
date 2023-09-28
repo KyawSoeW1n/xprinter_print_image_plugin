@@ -21,7 +21,7 @@ class XprinterPrintImagePlugin {
     return version;
   }
 
-  static Stream<dynamic> onPrintStatus() {
+  static Stream<dynamic> onPrinterStatus() {
     _streamPrintStatus = _eventChannel.receiveBroadcastStream();
     return _streamPrintStatus!;
   }
@@ -33,10 +33,51 @@ class XprinterPrintImagePlugin {
     return data;
   }
 
-  static Future<int> printImage({required String filePath}) async {
-    final data = await _channel.invokeMethod('printImage', {
-      'bitmap': filePath,
-    });
+  static Future<int> printImage({
+    required String filePath,
+    int? imageWidth,
+    int? feedLine,
+    int? distance,
+  }) async {
+    final Map<String, dynamic> arguments = {
+      'filePath': filePath,
+    };
+    if (imageWidth != null) {
+      arguments["imageWidth"] = imageWidth;
+    }
+    if (distance != null) {
+      arguments["distance"] = distance;
+    }
+    if (feedLine != null) {
+      arguments["feedLine"] = feedLine;
+    }
+    final data = await _channel.invokeMethod(
+      'printImage',
+      arguments,
+    );
+    return data;
+  }
+
+  static Future<int> printText({
+    required String text,
+    int? feedLine,
+    int? distance,
+  }) async {
+    final Map<String, dynamic> arguments = {
+      'text': text,
+    };
+
+    if (feedLine != null) {
+      arguments["feedLine"] = feedLine;
+    }
+    if (distance != null) {
+      arguments["distance"] = distance;
+    }
+
+    final data = await _channel.invokeMethod(
+      'printText',
+      arguments,
+    );
     return data;
   }
 
