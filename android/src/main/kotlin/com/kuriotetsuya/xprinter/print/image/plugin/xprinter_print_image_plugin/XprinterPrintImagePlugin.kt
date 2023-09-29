@@ -93,7 +93,7 @@ class XprinterPrintImagePlugin : FlutterPlugin, MethodCallHandler {
                 printer.printString(printText)
                     .feedLine(feedLine)
                     .cutHalfAndFeed(distance)
-                result.success(PrintStatus.PrintTextSuccess.code)
+                printStatus(PrintStatus.PrintTextSuccess.code)
             }
 
             "printImage" -> {
@@ -103,7 +103,6 @@ class XprinterPrintImagePlugin : FlutterPlugin, MethodCallHandler {
                 printer!!.printBitmap(filePath, POSConst.ALIGNMENT_CENTER, imageWidth)
                     .feedLine(feedLine)
                     .cutHalfAndFeed(distance)
-                result.success(PrintStatus.PrintImageSuccess.code)
             }
 
             else -> result.notImplemented()
@@ -118,7 +117,7 @@ class XprinterPrintImagePlugin : FlutterPlugin, MethodCallHandler {
     private fun onAttachedToEngine(applicationContext: Context, messenger: BinaryMessenger) {
         this.context = applicationContext
         val methodChannel = MethodChannel(messenger, "xprinter_print_image_plugin")
-        val eventChannel = EventChannel(messenger, "xprinter_print_image_plugin/print_image")
+        val eventChannel = EventChannel(messenger, "xprinter_print_image_plugin/print")
         methodChannel.setMethodCallHandler(this)
         eventChannel.setStreamHandler(object : EventChannel.StreamHandler {
 
@@ -138,7 +137,7 @@ class XprinterPrintImagePlugin : FlutterPlugin, MethodCallHandler {
             sink = eventSink
         }
 
-        fun printStatus(status: String) {
+        fun printStatus(status: Int) {
             val map: HashMap<String, Any> = HashMap()
             map["status"] = status
             sink?.success(map)

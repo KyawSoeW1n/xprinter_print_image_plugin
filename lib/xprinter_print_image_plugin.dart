@@ -8,7 +8,7 @@ class XprinterPrintImagePlugin {
   static const MethodChannel _channel =
       MethodChannel('xprinter_print_image_plugin');
   static const EventChannel _eventChannel =
-      EventChannel('xprinter_print_image_plugin/print_image');
+      EventChannel('xprinter_print_image_plugin/print');
   static Stream<dynamic>? _streamPrintStatus;
 
   Future<String?> getPlatformVersion() {
@@ -21,7 +21,7 @@ class XprinterPrintImagePlugin {
     return version;
   }
 
-  static Stream<dynamic> onPrinterStatus() {
+  static Stream<dynamic> onPrintStatus() {
     _streamPrintStatus = _eventChannel.receiveBroadcastStream();
     return _streamPrintStatus!;
   }
@@ -30,6 +30,13 @@ class XprinterPrintImagePlugin {
     final data = await _channel.invokeMethod('connectDevice', {
       'macAddress': macAddress,
     });
+    log("CONNECT $data");
+    return data;
+  }
+
+  static Future<int> disconnectDevice() async {
+    final data = await _channel.invokeMethod('disconnectDevice');
+    log("DISCONNECT $data");
     return data;
   }
 
@@ -79,9 +86,5 @@ class XprinterPrintImagePlugin {
       arguments,
     );
     return data;
-  }
-
-  static Future<void> disconnectDevice() async {
-    await _channel.invokeMethod('disconnectDevice');
   }
 }

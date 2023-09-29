@@ -2,11 +2,11 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:xprinter_print_image_plugin/connect_status.dart';
 import 'package:xprinter_print_image_plugin/xprinter_print_image_plugin.dart';
 
-import 'bluetooth_device_vo.dart';
 import 'device_list_screen.dart';
 
 class PrinterScreen extends StatefulWidget {
@@ -29,7 +29,7 @@ class _PrinterScreenState extends State<PrinterScreen> {
   void initState() {
     super.initState();
     initPlatformState();
-    XprinterPrintImagePlugin.onPrinterStatus().listen((event) {
+    XprinterPrintImagePlugin.onPrintStatus().listen((event) {
       log('onPrinter Status $event');
     });
   }
@@ -85,15 +85,14 @@ class _PrinterScreenState extends State<PrinterScreen> {
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) {
-                      return DeviceListScreen();
+                      return const DeviceListScreen();
                     }),
                   );
-
-                  BluetoothDeviceVO bluetoothDeviceVO = result;
-                  bluetoothMacAddress = "${bluetoothDeviceVO.deviceIdentifier}";
-                  log(">>>>> ${bluetoothDeviceVO.deviceIdentifier}");
-
-                  log(">>>>> ${bluetoothDeviceVO.deviceName}");
+                  if (result != null) {
+                    ScanResult scanResult = result;
+                    bluetoothMacAddress = "${scanResult.device.remoteId}";
+                    setState(() {});
+                  }
                 },
                 child: const Text("Select Device"),
               ),
@@ -168,6 +167,8 @@ class _PrinterScreenState extends State<PrinterScreen> {
   }
 
   void disconnectDevice() {
-    XprinterPrintImagePlugin.disconnectDevice();
+    XprinterPrintImagePlugin.disconnectDevice().then(
+      (value) => connectStatus = "Disconnect",
+    );
   }
 }
