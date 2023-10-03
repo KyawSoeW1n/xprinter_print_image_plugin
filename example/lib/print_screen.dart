@@ -167,8 +167,9 @@ class _PrinterScreenState extends State<PrinterScreen> {
   }
 
   void disconnectDevice() {
-    XprinterPrintImagePlugin.disconnectDevice().then(
-      (value) => connectStatus = "Disconnect",
-    );
+    XprinterPrintImagePlugin.disconnectDevice().then((value) {
+      connectStatus = "Disconnect";
+      setState(() {});
+    });
   }
 }

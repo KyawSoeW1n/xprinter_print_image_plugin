@@ -4,7 +4,8 @@ enum ConnectStatus {
   sendFail(3),
   connectInterrupt(4),
   usbAttached(5),
-  bluetoothInterrupt(6);
+  bluetoothInterrupt(6),
+  disconnect(888);
 
   final int code;
 

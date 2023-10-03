@@ -84,6 +84,7 @@ class XprinterPrintImagePlugin : FlutterPlugin, MethodCallHandler {
                 curConnect?.let {
                     if (it.isConnect) {
                         it.close()
+                        result.success(888)
                     }
                 }
             }
